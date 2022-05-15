@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>抖音私信websocket测试</title>
+</head>
+
+<body>
+    <input id="text" type="text" />
+    <button onclick="send()">发送</button>
+    <button onclick="clearScreen()">清空展示内容</button>
+    <div id="message"></div>
+</body>
+
+<script type="text/javascript">
+    var websocket = null;
+
+    if ('WebSocket' in window) {
+        // wss 链接自己去抖音网页版登录后抓自己的
+        websocket = new WebSocket("wss://frontier-im.douyin.com/ws/v2?xxxxx");
+    } else {
+        alert('Not support websocket')
+    }
+
+    websocket.onerror = function () {
+        setMessageInnerHTML("error");
+    };
+
+
+    websocket.onopen = function (event) {
+        console.log('//连接成功建立的回调方法')
+    }
+
+    //接收到消息的回调方法
+    websocket.onmessage = function (event) {
+        console.log(event)
+        blobToString(event.data).then(res => {
+            const jsonStart = res.indexOf('{')
+            const jsonEnd = res.length - res.split('').reverse().join("").indexOf('}')
+            let result = res.substring(jsonStart, jsonEnd)
+            setMessageInnerHTML(result);
+        })
+        
+    }
+
+    //连接关闭的回调方法
+    websocket.onclose = function () {
+        setMessageInnerHTML("close");
+    }
+
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function () {
+        websocket.close();
+    }
+
+    //将消息显示在网页上
+    function setMessageInnerHTML(innerHTML) {
+        document.getElementById('message').innerHTML += '接收到：' + innerHTML + '<br/><br/>';
+    }
+
+    //关闭连接
+    function closeWebSocket() {
+        websocket.close();
+    }
+
+    // 发送消息
+    function send() {
+        var message = document.getElementById('text').value;
+        const para = stringtoHex(message)
+        console.log(para)
+        websocket.send(para);
+    }
+
+    // clear
+    function clearScreen() {
+        document.getElementById('message').innerHTML = '';
+    }
+
+    function blobToString(blob) {
+        return new Promise((resolve, reject) => {
+            var reader = new FileReader();
+            reader.onload = function(event){
+                var content = reader.result;
+                resolve(content);
+            };
+            reader.readAsText(blob);
+        });
+    }
+
+    // 存在bug，待详细抓包完善分析协议
+    function stringtoHex (str) {
+        let val = '';
+        for(var i = 0; i < str.length; i++) {
+            if(val == "") {
+                val = str.charCodeAt(i).toString(16);
+            } else { 
+                val += str.charCodeAt(i).toString(16);
+            }
+        }
+        str = '08034e10c3bf01c28d30180520012a1b0a07582d426f6775731210663055687237584f676b4265334734503a027062421c6410034e1a05302e332e34222803303a11356437373134383a6465762d302e332e3442e493aa25303a313a313230303331303239333634303337363a323630373638353137353630393531361001180201c488c592036222457b226d656e74696f6e5f7573657273223a5b5d2c2261776554797065223a3730302c227269636854657874496e666f73223a5b5d2c2274657874223a22' + 
+        + val +
+        '227d2a150a11733a6d656e74696f6e65645f7573657273122a3b0a13733a636c69656e745f6d6573736167655f6964122433656161316139342d323065662d343831622d626466662d65653531343838636562366530073a01013248626877434843544d544d6c37366372416a6b57784f31637a6a51654b386f49423458653453596b5631397a4e334c346e71547a5066644a6e6e717a716f454c645347365159724b4845554e61705a5977796d3568574f6d66473378744e314d784c3468673853564a7079703967694e776e45433074695661796d7464365263422433656161316139342d323065662d343831622d626466662d6565353134383863656236654a10323630373638353137353630393531365a09646f7579696e5f70637a0a0864657669636549641201307a100a0b73657373696f6e5f6469641201300101'
+        //将字符串 转换成 Blob 对象
+        console.log(str)
+        
+        let typedArray = new Uint8Array(str.match(/[\da-f]{2}/gi).map(function (h) {
+        return parseInt(h, 16)
+      }))
+      let buffer = typedArray.buffer
+      return buffer
+
+    }
+
+
+</script>
+
+</html>
