@@ -1,6 +1,8 @@
 # douyin-wss
 抖音网页版私信聊天WSS抓包分析
 
+> 建议移步 [https://github.com/YunzhiYike/douyin-live](https://github.com/YunzhiYike/douyin-live) 该项目更新更及时全面。本项目经年未更，无法保障可用性。
+
 ## 接收到文本消息
 ```json
 {
